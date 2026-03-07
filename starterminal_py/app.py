@@ -1,5 +1,8 @@
 import secrets
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 
 from starterminal_py.models import (
     BalanceResponse,
@@ -12,9 +15,17 @@ from starterminal_py.models import (
 from starterminal_py.storage import Storage
 from starterminal_py.telegram_service import TelegramService
 
-app = FastAPI(title="Starterminal Python API", version="1.0.0")
+app = FastAPI(title="Starterminal Python API", version="1.1.0")
 storage = Storage()
 telegram = TelegramService()
+
+BASE_DIR = Path(__file__).resolve().parent
+UI_FILE = BASE_DIR / "ui" / "index.html"
+
+
+@app.get("/")
+def ui_home():
+    return FileResponse(UI_FILE)
 
 
 @app.get("/health")

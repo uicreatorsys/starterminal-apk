@@ -1,8 +1,8 @@
 # Starterminal (Python Edition)
 
-Проєкт повністю перероблено під **Python API сервер** для роботи з картками:
+Проєкт повністю перероблено під **Python API сервер** + **зручний веб-інтерфейс** (віконце в браузері) для роботи з картками:
 
-- зчитування NFC (вхідні дані з телефону/MacroDroid);
+- зчитування NFC (вхідні дані з телефону/MacroDroid/Automate);
 - поповнення картки з кодом підтвердження;
 - зняття коштів по PIN;
 - перевірка балансу;
@@ -18,7 +18,9 @@ pip install -r requirements.txt
 ```
 
 Сервер стартує на `http://localhost:8000`.
-Swagger UI: `http://localhost:8000/docs`
+
+- API docs: `http://localhost:8000/docs`
+- UI (віконце терміналу): `http://localhost:8000/`
 
 ## Основні API методи
 
@@ -29,7 +31,7 @@ Swagger UI: `http://localhost:8000/docs`
 - `POST /card/topup/confirm` — підтвердити код поповнення
 - `POST /card/withdraw` — зняти кошти по PIN
 
-## Приклад під MacroDroid
+## Приклад під MacroDroid / Automate
 
 Trigger: NFC Tag detected  
 Action: HTTP Request (POST)
