@@ -7,62 +7,70 @@
   <style>
     :root { color-scheme: dark; }
     body { font-family: Arial, sans-serif; background: #10131a; color: #e9eef8; margin: 0; }
-    .wrap { max-width: 860px; margin: 24px auto; padding: 16px; }
+    .wrap { max-width: 900px; margin: 24px auto; padding: 16px; }
     .card { background: #171d28; border: 1px solid #2b3242; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
     h1 { margin: 0 0 12px; }
     h2 { margin: 0 0 8px; font-size: 18px; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    input { background: #0f1420; border: 1px solid #2b3242; color: #e9eef8; border-radius: 8px; padding: 10px; min-width: 160px; }
+    input { background: #0f1420; border: 1px solid #2b3242; color: #e9eef8; border-radius: 8px; padding: 10px; min-width: 170px; }
     button { background: #3b82f6; color: white; border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
     button:hover { background: #2563eb; }
     pre { white-space: pre-wrap; background: #0c111b; border: 1px solid #2b3242; border-radius: 8px; padding: 12px; min-height: 48px; }
     .muted { color: #aab4c8; font-size: 13px; }
+    .code-box { font-weight: bold; font-size: 24px; letter-spacing: 2px; margin-top: 8px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Starterminal — віконце терміналу</h1>
-    <p class="muted">Зручно для роботи без консолі: реєстрація карт, NFC-скан, баланс, поповнення, підтвердження коду, зняття по PIN.</p>
+    <h1>Starterminal — симулятор терміналу</h1>
+    <p class="muted">Для гри: картки вигадані (можна вводити вручну, наприклад 5564 6566 8879 0986).</p>
 
     <div class="card">
-      <h2>1) Реєстрація картки</h2>
+      <h2>0) Старт терміналу (код доступу)</h2>
       <div class="row">
-        <input id="regCard" placeholder="Card ID" />
-        <input id="regOwner" placeholder="Owner name" />
-        <input id="regPin" placeholder="PIN" />
+        <button onclick="startTerminal()">Старт</button>
+        <input id="terminalCodeInput" placeholder="Введи код, що показано" />
+        <button onclick="verifyTerminal()">Підтвердити код</button>
+      </div>
+      <div class="code-box" id="terminalCode">------</div>
+      <div class="muted">Поки код не підтверджений, поповнення/зняття заблоковані.</div>
+    </div>
+
+    <div class="card">
+      <h2>1) Створити карту</h2>
+      <div class="row">
+        <input id="regCard" placeholder="Номер карти" />
+        <input id="regOwner" placeholder="Ім'я" />
+        <input id="regPin" placeholder="Пароль/PIN" />
         <input id="regChat" placeholder="Telegram chat id (опц.)" />
-        <button onclick="registerCard()">Створити</button>
+        <button onclick="registerCard()">Створити карту</button>
       </div>
     </div>
 
     <div class="card">
-      <h2>2) NFC scan + баланс</h2>
+      <h2>2) Перевірка карти (скан/ручний ввод)</h2>
       <div class="row">
-        <input id="scanCardId" placeholder="Card ID" />
-        <button onclick="scanCard()">NFC Scan</button>
+        <input id="scanCardId" placeholder="Номер карти" />
+        <button onclick="scanCard()">Перевірити (scan)</button>
         <button onclick="getBalance()">Баланс</button>
       </div>
     </div>
 
     <div class="card">
-      <h2>3) Поповнення (з кодом)</h2>
+      <h2>3) Поповнення</h2>
       <div class="row">
-        <input id="topupCard" placeholder="Card ID" />
-        <input id="topupAmount" placeholder="Amount" type="number" />
-        <button onclick="requestTopup()">Надіслати код</button>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <input id="topupCode" placeholder="6-digit code" />
-        <button onclick="confirmTopup()">Підтвердити код</button>
+        <input id="topupCard" placeholder="Номер карти" />
+        <input id="topupAmount" placeholder="Сума" type="number" />
+        <button onclick="topup()">Поповнити</button>
       </div>
     </div>
 
     <div class="card">
       <h2>4) Зняття</h2>
       <div class="row">
-        <input id="wdCard" placeholder="Card ID" />
-        <input id="wdAmount" placeholder="Amount" type="number" />
-        <input id="wdPin" placeholder="PIN" />
+        <input id="wdCard" placeholder="Номер карти" />
+        <input id="wdAmount" placeholder="Сума" type="number" />
+        <input id="wdPin" placeholder="Пароль/PIN" />
         <button onclick="withdraw()">Зняти</button>
       </div>
     </div>
@@ -87,6 +95,21 @@
     function setOut(obj) { document.getElementById('out').textContent = JSON.stringify(obj, null, 2); }
     function fail(e) { setOut({ ok: false, error: String(e.message || e) }); }
 
+    async function startTerminal() {
+      try {
+        const data = await api('/terminal/start', 'POST');
+        terminalCode.textContent = data.code;
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+
+    async function verifyTerminal() {
+      try {
+        const data = await api('/terminal/verify', 'POST', { code: terminalCodeInput.value });
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+
     async function registerCard() {
       try {
         const data = await api('/card/register', 'POST', {
@@ -98,12 +121,14 @@
         setOut(data);
       } catch (e) { fail(e); }
     }
+
     async function scanCard() {
       try {
         const data = await api('/nfc/scan', 'POST', { card_id: scanCardId.value, source: 'ui_manual' });
         setOut(data);
       } catch (e) { fail(e); }
     }
+
     async function getBalance() {
       try {
         const id = scanCardId.value;
@@ -113,24 +138,17 @@
         setOut(data);
       } catch (e) { fail(e); }
     }
-    async function requestTopup() {
+
+    async function topup() {
       try {
-        const data = await api('/card/topup/request', 'POST', {
+        const data = await api('/card/topup', 'POST', {
           card_id: topupCard.value,
           amount: Number(topupAmount.value),
         });
         setOut(data);
       } catch (e) { fail(e); }
     }
-    async function confirmTopup() {
-      try {
-        const data = await api('/card/topup/confirm', 'POST', {
-          card_id: topupCard.value,
-          code: topupCode.value,
-        });
-        setOut(data);
-      } catch (e) { fail(e); }
-    }
+
     async function withdraw() {
       try {
         const data = await api('/card/withdraw', 'POST', {

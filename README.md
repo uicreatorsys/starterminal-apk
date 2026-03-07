@@ -17,21 +17,16 @@ pip install -r requirements.txt
 ./run-server.sh
 ```
 
-Сервер стартує на `http://localhost:8000`.
+Відкрити UI: `http://localhost:8000/`
 
-- API docs: `http://localhost:8000/docs`
-- UI (віконце терміналу): `http://localhost:8000/`
+## Новий флоу "старт-код терміналу"
 
-## Основні API методи
+1. Натискаєш **Старт**.
+2. Додаток показує 6-значний код.
+3. Вводиш цей же код у поле і тиснеш **Підтвердити код**.
+4. Після цього дозволені `поповнення` та `зняття`.
 
-- `POST /card/register` — створити картку + PIN
-- `POST /nfc/scan` — прийняти NFC-ідентифікатор
-- `GET /card/{card_id}/balance` — баланс
-- `POST /card/topup/request` — запросити поповнення (генерує код)
-- `POST /card/topup/confirm` — підтвердити код поповнення
-- `POST /card/withdraw` — зняти кошти по PIN
-
-## Приклад під MacroDroid / Automate
+## Приклад під MacroDroid / Automate (опційно)
 
 Trigger: NFC Tag detected  
 Action: HTTP Request (POST)
@@ -44,10 +39,20 @@ Body:
 
 ```json
 {
-  "card_id": "04AABBCCDD",
+  "card_id": "5564 6566 8879 0986",
   "source": "macro_nfc"
 }
 ```
+
+## Telegram (опційно)
+
+Сервер підтримує Telegram Bot API, якщо задати змінну середовища:
+
+```bash
+export TELEGRAM_BOT_TOKEN="YOUR_BOT_TOKEN"
+```
+
+> Якщо токен вже десь публічно світився — обов'язково відклич його в @BotFather і створи новий.
 
 ## Тести
 
