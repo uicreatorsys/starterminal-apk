@@ -1,29 +1,54 @@
-# Starterminal
+# Starterminal (Python Edition)
 
-`Starterminal` — це базовий Android-проєкт для телефонного терміналу з такими функціями:
+Проєкт повністю перероблено під **Python API сервер** для роботи з картками:
 
-- зчитування NFC-міток;
-- поповнення карти;
-- зняття грошей з карти.
+- зчитування NFC (вхідні дані з телефону/MacroDroid);
+- поповнення картки з кодом підтвердження;
+- зняття коштів по PIN;
+- перевірка балансу;
+- заготовка інтеграції з Telegram.
 
-## Дуже проста інструкція (для непрофі)
-
-1. Відкрий термінал у папці проєкту.
-2. Запусти **одну команду**:
+## Швидкий старт
 
 ```bash
-./build-debug-apk.sh
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+pip install -r requirements.txt
+./run-server.sh
 ```
 
-3. Після збірки файл буде тут:
+Сервер стартує на `http://localhost:8000`.
+Swagger UI: `http://localhost:8000/docs`
 
-`app/build/outputs/apk/debug/app-debug.apk`
+## Основні API методи
 
-## Якщо не збирається
+- `POST /card/register` — створити картку + PIN
+- `POST /nfc/scan` — прийняти NFC-ідентифікатор
+- `GET /card/{card_id}/balance` — баланс
+- `POST /card/topup/request` — запросити поповнення (генерує код)
+- `POST /card/topup/confirm` — підтвердити код поповнення
+- `POST /card/withdraw` — зняти кошти по PIN
 
-- Потрібен інтернет до `dl.google.com` (звідти качаються Android-залежності).
-- Якщо інтернет блокується на роботі/в країні — спробуй іншу мережу або VPN.
+## Приклад під MacroDroid
 
-## Важливо
+Trigger: NFC Tag detected  
+Action: HTTP Request (POST)
 
-Це MVP-демо. Тут немає реальної банківської інтеграції чи продакшен-безпеки.
+URL:
+
+`http://<IP_ПК>:8000/nfc/scan`
+
+Body:
+
+```json
+{
+  "card_id": "04AABBCCDD",
+  "source": "macro_nfc"
+}
+```
+
+## Тести
+
+```bash
+pytest -q
+```

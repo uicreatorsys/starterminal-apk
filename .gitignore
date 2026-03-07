@@ -1,7 +1,8 @@
-.gradle/
-/local.properties
-/.idea/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+starterminal.db
 .DS_Store
-/build/
-/app/build/
-*.iml
+.idea/
+.vscode/
