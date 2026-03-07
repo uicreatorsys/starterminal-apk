@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Starterminal UI</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: Arial, sans-serif; background: #10131a; color: #e9eef8; margin: 0; }
+    .wrap { max-width: 860px; margin: 24px auto; padding: 16px; }
+    .card { background: #171d28; border: 1px solid #2b3242; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    h1 { margin: 0 0 12px; }
+    h2 { margin: 0 0 8px; font-size: 18px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    input { background: #0f1420; border: 1px solid #2b3242; color: #e9eef8; border-radius: 8px; padding: 10px; min-width: 160px; }
+    button { background: #3b82f6; color: white; border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+    button:hover { background: #2563eb; }
+    pre { white-space: pre-wrap; background: #0c111b; border: 1px solid #2b3242; border-radius: 8px; padding: 12px; min-height: 48px; }
+    .muted { color: #aab4c8; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Starterminal — віконце терміналу</h1>
+    <p class="muted">Зручно для роботи без консолі: реєстрація карт, NFC-скан, баланс, поповнення, підтвердження коду, зняття по PIN.</p>
+
+    <div class="card">
+      <h2>1) Реєстрація картки</h2>
+      <div class="row">
+        <input id="regCard" placeholder="Card ID" />
+        <input id="regOwner" placeholder="Owner name" />
+        <input id="regPin" placeholder="PIN" />
+        <input id="regChat" placeholder="Telegram chat id (опц.)" />
+        <button onclick="registerCard()">Створити</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2) NFC scan + баланс</h2>
+      <div class="row">
+        <input id="scanCardId" placeholder="Card ID" />
+        <button onclick="scanCard()">NFC Scan</button>
+        <button onclick="getBalance()">Баланс</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3) Поповнення (з кодом)</h2>
+      <div class="row">
+        <input id="topupCard" placeholder="Card ID" />
+        <input id="topupAmount" placeholder="Amount" type="number" />
+        <button onclick="requestTopup()">Надіслати код</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <input id="topupCode" placeholder="6-digit code" />
+        <button onclick="confirmTopup()">Підтвердити код</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>4) Зняття</h2>
+      <div class="row">
+        <input id="wdCard" placeholder="Card ID" />
+        <input id="wdAmount" placeholder="Amount" type="number" />
+        <input id="wdPin" placeholder="PIN" />
+        <button onclick="withdraw()">Зняти</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Результат</h2>
+      <pre id="out">Готово.</pre>
+    </div>
+  </div>
+
+  <script>
+    async function api(path, method, body) {
+      const res = await fetch(path, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+      return data;
+    }
+    function setOut(obj) { document.getElementById('out').textContent = JSON.stringify(obj, null, 2); }
+    function fail(e) { setOut({ ok: false, error: String(e.message || e) }); }
+
+    async function registerCard() {
+      try {
+        const data = await api('/card/register', 'POST', {
+          card_id: regCard.value,
+          owner_name: regOwner.value,
+          pin: regPin.value,
+          telegram_chat_id: regChat.value || null,
+        });
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+    async function scanCard() {
+      try {
+        const data = await api('/nfc/scan', 'POST', { card_id: scanCardId.value, source: 'ui_manual' });
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+    async function getBalance() {
+      try {
+        const id = scanCardId.value;
+        const res = await fetch(`/card/${id}/balance`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Помилка');
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+    async function requestTopup() {
+      try {
+        const data = await api('/card/topup/request', 'POST', {
+          card_id: topupCard.value,
+          amount: Number(topupAmount.value),
+        });
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+    async function confirmTopup() {
+      try {
+        const data = await api('/card/topup/confirm', 'POST', {
+          card_id: topupCard.value,
+          code: topupCode.value,
+        });
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+    async function withdraw() {
+      try {
+        const data = await api('/card/withdraw', 'POST', {
+          card_id: wdCard.value,
+          amount: Number(wdAmount.value),
+          pin: wdPin.value,
+        });
+        setOut(data);
+      } catch (e) { fail(e); }
+    }
+  </script>
+</body>
+</html>
